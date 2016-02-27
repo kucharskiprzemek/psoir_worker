@@ -3,3 +3,15 @@ python:
 - '2.7'
 - '3.3'
 - pypy
+before_install: pip install -r requirements.txt
+deploy:
+  provider: s3
+  access_key_id: AKIAJIM3K63WUZQVLQRA
+  secret_access_key:
+    secure: YYsJdeIVXJVMdHpMDdAQ8M+f8a0GBxGS46PwT1ydPvo+kWPr1tiqCtrfolhNXttmr+dLMkCxbcRgYh1VSyJ5+emixKwrr9WEn5Jdsjy4FwLUaC3quASoPps4TUF1zM6POVw27wrzgfpBfLRpPgRfrpD8MD1Hy2QkFsjYcff1YaKnwMPCFRG1Saz9g6b/GMHAyoys9gICGFm75VNCJW3W+aMq+hKJba1Wg9ljw9KLYRooFDmklXt00g7/3Vl5htxvtnZ0v4okvxtn/W875lr9K657XHAktSeLj3ObNVla9R77HeeQ96eGqBz5mkmPG48QKyWfYCIeFjsP8Lf64ASBkTh7+wRUYiNxbIv8WU8P/V4pF88eCo3+XZtxwAUEl1aaBGfC/w4G8chd//wFDMqAfLS83l9R57e54HGC7e3aL1QZ6hpTh1osCfTXSgFI/rSt2X/CmGA9Jz8159R31fWpD7CUCwo+7vamfFpVTSSteGJl7auvugdp4R4WanM/o/49mWCdJeoI03gSDO/E4dBgCjzrWyNuQxbhes2b87JzHHkQOskupDuXELH3T8yVmRUv/zHdcp+tL3e1//zOJ1dfZrCORcra1WGB+bP4H8vmczlZeRoN/cbJA3abre6BWdQD2t9oa73N9OoqkHuZiDe2TLgdDYP2Mwn5MMqkNKzNKVQ=
+  bucket: pkucharski
+  upload-dir: worker
+  acl: public_read
+  on:
+    repo: kucharskiprzemek/psoir_worker
+script: nosetests
