@@ -1,20 +1,25 @@
 #!/usr/bin/python3
 from datetime import datetime
-
+# aws
 import boto3
+# for image processing
 from PIL import Image
-
+# define resources
 BUCKET_NAME = 'pkucharski'
 SDB_DOMAIN_NAME = 'kucharskiSDB'
-
-# Get the service resource
+# get sqs
 sqs = boto3.resource('sqs', region_name='us-west-2')
+# get queue
 queue = sqs.get_queue_by_name(QueueName='kucharskiSQS')
+# get SimpleDataBase
 sdb = boto3.client('sdb', region_name='us-west-2')
+# get S3
+s3 = boto3.resource('s3')
+# get proper bucket
+bucket = s3.Bucket(BUCKET_NAME)
 
-print('Started worker')
-
-def log_simpledb(app, type, content):
+# logging to SimpleDataBase
+def log_sdb(app, type, content):
     sdb.put_attributes(DomainName=SDB_DOMAIN_NAME, ItemName=str(datetime.utcnow()),
                        Attributes=[{
                            'Name': 'App',
@@ -29,25 +34,31 @@ def log_simpledb(app, type, content):
                                'Value': str(content)
                            }])
 
-s3 = boto3.resource('s3')
-bucket = s3.Bucket(BUCKET_NAME)
-log_simpledb('worker', 'Started', 'Started worker')
+print('PSOIR worker started')
 
-print(list(s3.buckets.all()))
+log_sdb('worker', 'Started', 'Started worker')
+
+# create domain for SimpleDataBase if not existing
 if SDB_DOMAIN_NAME not in sdb.list_domains()['DomainNames']:
-    print('Creating SDB domain {}'.format(SDB_DOMAIN_NAME))
+    print('Creating SimpleDataBase domain {}'.format(SDB_DOMAIN_NAME))
     sdb.create_domain(DomainName=SDB_DOMAIN_NAME)
 
+# work, work, work
 while True:
+    # process each message in queue
     for message in queue.receive_messages(WaitTimeSeconds=5):
         try:
-            s3.Object(BUCKET_NAME, message.body).download_file('tmp')
-            img = Image.open('tmp')
-            img.rotate(90).save('tmp.png', format='PNG')
+            # get image
+            s3.Object(BUCKET_NAME, message.body).download_file('temporary')
+            # open image
+            image = Image.open('temporary')
+            # rotate it (or anything else)
+            image.rotate(180).save('temporary.png', format='PNG')
+            # save processed file
             extension = ''
             if not message.body.endswith('.png'):
                 extension = '.png'
-            bucket.upload_file('tmp.png', 'ROTATED_{}{}'.format(message.body, extension))
+            bucket.upload_file('temporary.png', 'processed_{}{}'.format(message.body, extension))
             log_simpledb('worker', 'Processed file', message.body)
         except (Exception, OSError) as e:
             log_simpledb('worker', 'Error in processing', e)
